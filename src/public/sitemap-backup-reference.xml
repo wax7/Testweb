@@ -1,0 +1,41 @@
+<!--
+  SITEMAP BACKUP REFERENCE - Created 2026-03-11
+  
+  Complete sitemap.xml structure for getmaca.de
+  112 URLs total (7 page types × 16 languages)
+  
+  All URLs follow this pattern:
+  - Base: https://getmaca.de/{lang}/{page}
+  - Each <url> has: loc, lastmod (2026-03-11), changefreq, priority, 16 hreflang alternates + x-default (en)
+  
+  LANGUAGES (16):
+  en, de, fr, es, it, ja, zh-Hans, zh-Hant, ar, ru, nl, tr, sv, da, ko, nb
+  
+  PAGE TYPES & SETTINGS:
+  ┌─────────────────┬──────────┬────────────┐
+  │ Page            │ Priority │ Changefreq │
+  ├─────────────────┼──────────┼────────────┤
+  │ HOME (/{lang})  │ 1.0      │ weekly     │
+  │ guide           │ 0.9      │ monthly    │
+  │ faq             │ 0.8      │ monthly    │
+  │ troubleshooting │ 0.8      │ monthly    │
+  │ privacy         │ 0.7      │ yearly     │
+  │ terms           │ 0.6      │ yearly     │
+  │ imprint         │ 0.5      │ yearly     │
+  └─────────────────┴──────────┴────────────┘
+  
+  XML HEADER:
+  <?xml version="1.0" encoding="UTF-8"?>
+  <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  
+  HREFLANG ORDER per URL (17 total):
+  en, de, fr, es, it, ja, zh-Hans, zh-Hant, ar, ru, nl, tr, sv, da, ko, nb, x-default (→ en)
+  
+  LANGUAGE ORDER for <url> entries within each section:
+  en, de, fr, es, it, ja, zh-Hans, zh-Hant, ar, ru, nl, tr, sv, da, ko, nb
+  
+  HOME URLs use: https://getmaca.de/{lang} (no trailing page path)
+  All other pages use: https://getmaca.de/{lang}/{page}
+  
+  This reference is sufficient to fully reconstruct the sitemap.xml.
+-->
