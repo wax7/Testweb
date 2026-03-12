@@ -1,0 +1,55 @@
+{
+  "_comment": "Prerender configuration hint for hosting providers (Netlify, Cloudflare Pages, Vercel, etc.)",
+  "_purpose": "Ensures crawlers receive fully rendered HTML with locale-specific <head> per language route.",
+  "enabled": true,
+  "userAgents": [
+    "Googlebot",
+    "Bingbot",
+    "Applebot",
+    "Twitterbot",
+    "facebookexternalhit",
+    "LinkedInBot",
+    "Slurp",
+    "DuckDuckBot",
+    "Baiduspider",
+    "YandexBot"
+  ],
+  "prerenderRoutes": [
+    "/en", "/de", "/fr", "/es", "/it", "/ja",
+    "/zh-Hans", "/zh-Hant", "/ar", "/ru", "/nl", "/tr", "/sv", "/da", "/ko", "/nb",
+    "/en/guide", "/de/guide", "/fr/guide", "/es/guide", "/it/guide", "/ja/guide",
+    "/zh-Hans/guide", "/zh-Hant/guide", "/ar/guide", "/ru/guide", "/nl/guide", "/tr/guide",
+    "/sv/guide", "/da/guide", "/ko/guide", "/nb/guide",
+    "/en/faq", "/de/faq", "/fr/faq", "/es/faq", "/it/faq", "/ja/faq",
+    "/zh-Hans/faq", "/zh-Hant/faq", "/ar/faq", "/ru/faq", "/nl/faq", "/tr/faq",
+    "/sv/faq", "/da/faq", "/ko/faq", "/nb/faq",
+    "/en/troubleshooting", "/de/troubleshooting", "/fr/troubleshooting", "/es/troubleshooting",
+    "/it/troubleshooting", "/ja/troubleshooting", "/zh-Hans/troubleshooting", "/zh-Hant/troubleshooting",
+    "/ar/troubleshooting", "/ru/troubleshooting", "/nl/troubleshooting", "/tr/troubleshooting",
+    "/sv/troubleshooting", "/da/troubleshooting", "/ko/troubleshooting", "/nb/troubleshooting",
+    "/en/privacy", "/de/privacy", "/fr/privacy", "/es/privacy", "/it/privacy", "/ja/privacy",
+    "/zh-Hans/privacy", "/zh-Hant/privacy", "/ar/privacy", "/ru/privacy", "/nl/privacy", "/tr/privacy",
+    "/sv/privacy", "/da/privacy", "/ko/privacy", "/nb/privacy",
+    "/en/terms", "/de/terms", "/fr/terms", "/es/terms", "/it/terms", "/ja/terms",
+    "/zh-Hans/terms", "/zh-Hant/terms", "/ar/terms", "/ru/terms", "/nl/terms", "/tr/terms",
+    "/sv/terms", "/da/terms", "/ko/terms", "/nb/terms",
+    "/en/imprint", "/de/imprint", "/fr/imprint", "/es/imprint", "/it/imprint", "/ja/imprint",
+    "/zh-Hans/imprint", "/zh-Hant/imprint", "/ar/imprint", "/ru/imprint", "/nl/imprint", "/tr/imprint",
+    "/sv/imprint", "/da/imprint", "/ko/imprint", "/nb/imprint"
+  ],
+  "excludeRoutes": [
+    "/*/feedback",
+    "/history",
+    "/sitemap"
+  ],
+  "headRequirements": {
+    "perRoute": [
+      "<html lang=\"{BCP47}\">",
+      "<meta http-equiv=\"Content-Language\" content=\"{BCP47}\">",
+      "<title>{locale-specific title}</title>",
+      "<meta name=\"description\" content=\"{locale-specific description}\">",
+      "<link rel=\"canonical\" href=\"https://getmaca.de/{lang}/{page}\">",
+      "16x <link rel=\"alternate\" hreflang=\"{lang}\" href=\"...\"> + x-default"
+    ]
+  }
+}
