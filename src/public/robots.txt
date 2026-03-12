@@ -4,6 +4,7 @@
 # ── Default rules for all bots ────────────────────────────────────────────
 User-agent: *
 Allow: /
+Allow: /sitemap.xml
 Disallow: /history
 Disallow: /sitemap
 Disallow: /*/feedback
@@ -12,6 +13,7 @@ Disallow: /robots.txt
 # ── Googlebot – no crawl-delay needed (uses Search Console settings) ──────
 User-agent: Googlebot
 Allow: /
+Allow: /sitemap.xml
 Disallow: /history
 Disallow: /sitemap
 Disallow: /*/feedback
@@ -20,6 +22,7 @@ Disallow: /robots.txt
 # ── Bingbot ───────────────────────────────────────────────────────────────
 User-agent: Bingbot
 Allow: /
+Allow: /sitemap.xml
 Disallow: /history
 Disallow: /sitemap
 Disallow: /*/feedback
