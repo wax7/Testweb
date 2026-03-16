@@ -85,7 +85,7 @@ export function HomeView() {
       <main id="main-content">
         {/* Wrapper for FloatingKeywords – spans Hero through ProblemSolution */}
         <div className="relative overflow-hidden">
-          <FloatingKeywords lang={currentLang} />
+          <FloatingKeywords lang={currentLang} isDarkMode={isDarkMode} />
 
         {/* ══════════ HERO ══════════ */}
         <section className="relative pt-24 sm:pt-28 md:pt-36 pb-8 sm:pb-12 md:pb-16 px-4 sm:px-6 min-h-[480px] md:min-h-[560px] overflow-visible" style={{ zIndex: 5 }}>

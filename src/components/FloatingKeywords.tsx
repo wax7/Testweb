@@ -130,7 +130,7 @@ const KEYWORDS_BY_LANG: Record<Language, string[]> = {
   ],
   da: [
     'API-grænseflade', '7.1 Surround', 'Lydrouting', 'Multi-Rum',
-    'Kontrolcenter', 'Equalizer', 'Auto-Normalisering', '1-Klik Kontrol',
+    'Kontrollcenter', 'Equalizer', 'Auto-Normalisering', '1-Klik Kontroll',
     'Genvejstaster', 'Profiler', 'macOS-Nativt', 'Lydforstærkning',
     'Fokustilstand', 'Kraftfuld', 'Lav CPU', 'Batterioptimeret',
     'Regelmæssige Opdateringer', 'Lydstyrkebegrænser', 'Per-App Lyd',
@@ -157,7 +157,7 @@ const KEYWORDS_BY_LANG: Record<Language, string[]> = {
   ],
 };
 
-// ── Neon color definitions ──────────────────────────────────────────
+// ── Neon color palette ──────────────────────────────────────────────
 type NeonColor = 'cyan' | 'magenta' | 'lime' | 'orange' | 'violet' | 'blue';
 
 interface NeonDef {
@@ -166,13 +166,24 @@ interface NeonDef {
   border: string;
 }
 
-const NEON_COLORS: Record<NeonColor, NeonDef> = {
+// Dark mode: vivid neon on dark glass
+const NEON_COLORS_DARK: Record<NeonColor, NeonDef> = {
   cyan:    { color: '#00FFFF', glow: '0 0 6px #00FFFF, 0 0 14px #00FFFF, 0 0 30px #00FFFF55', border: 'rgba(0,255,255,0.35)' },
   magenta: { color: '#FF00FF', glow: '0 0 6px #FF00FF, 0 0 14px #FF00FF, 0 0 30px #FF00FF55', border: 'rgba(255,0,255,0.35)' },
   lime:    { color: '#39FF14', glow: '0 0 6px #39FF14, 0 0 14px #39FF14, 0 0 30px #39FF1455', border: 'rgba(57,255,20,0.35)' },
   orange:  { color: '#FF6600', glow: '0 0 6px #FF6600, 0 0 14px #FF6600, 0 0 30px #FF660055', border: 'rgba(255,102,0,0.35)' },
   violet:  { color: '#BF5AF2', glow: '0 0 6px #BF5AF2, 0 0 14px #BF5AF2, 0 0 30px #BF5AF255', border: 'rgba(191,90,242,0.35)' },
   blue:    { color: '#007AFF', glow: '0 0 6px #007AFF, 0 0 14px #007AFF, 0 0 30px #007AFF55', border: 'rgba(0,122,255,0.35)' },
+};
+
+// Light mode: softer muted tones, no harsh glow, frosted-glass feel
+const NEON_COLORS_LIGHT: Record<NeonColor, NeonDef> = {
+  cyan:    { color: '#0891B2', glow: 'none', border: 'rgba(8,145,178,0.2)' },
+  magenta: { color: '#C026D3', glow: 'none', border: 'rgba(192,38,211,0.2)' },
+  lime:    { color: '#16A34A', glow: 'none', border: 'rgba(22,163,74,0.2)' },
+  orange:  { color: '#EA580C', glow: 'none', border: 'rgba(234,88,12,0.2)' },
+  violet:  { color: '#9333EA', glow: 'none', border: 'rgba(147,51,234,0.2)' },
+  blue:    { color: '#007AFF', glow: 'none', border: 'rgba(0,122,255,0.2)' },
 };
 
 const NEON_SEQUENCE: NeonColor[] = [
@@ -287,9 +298,10 @@ const MAX_SPEED = 4.5;
 // ── Component ───────────────────────────────────────────────────────
 interface FloatingKeywordsProps {
   lang?: Language;
+  isDarkMode?: boolean;
 }
 
-export function FloatingKeywords({ lang = 'en' }: FloatingKeywordsProps) {
+export function FloatingKeywords({ lang = 'en', isDarkMode = false }: FloatingKeywordsProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const particlesRef = useRef<Particle[]>([]);
   const microDotsRef = useRef<MicroDot[]>([]);
@@ -502,11 +514,20 @@ export function FloatingKeywords({ lang = 'en' }: FloatingKeywordsProps) {
             p.vy *= scale;
           }
 
-          // Minimum drift
+          // Minimum drift – use a RANDOM angle to prevent equilibrium sticking
           if (speed < BASE_SPEED * 0.3) {
-            const angle = Math.atan2(p.vy, p.vx) || (i * 0.7);
-            p.vx += Math.cos(angle) * 0.08;
-            p.vy += Math.sin(angle) * 0.08;
+            const randAngle = Math.random() * Math.PI * 2;
+            p.vx += Math.cos(randAngle) * 0.12;
+            p.vy += Math.sin(randAngle) * 0.12;
+          }
+
+          // Brownian motion – continuous tiny random perturbation every ~30 frames
+          if (frame % 30 === (i % 30)) {
+            const brownAngle = Math.random() * Math.PI * 2;
+            const brownForce = 0.15 + Math.random() * 0.15;
+            p.vx += Math.cos(brownAngle) * brownForce;
+            p.vy += Math.sin(brownAngle) * brownForce;
+            p.vr += (Math.random() - 0.5) * 0.02;
           }
 
           // Hard edge clamp (safety)
@@ -583,9 +604,9 @@ export function FloatingKeywords({ lang = 'en' }: FloatingKeywordsProps) {
               transform: `translate3d(${dot.x}px, ${dot.y}px, 0)`,
               width: `${dot.size}px`,
               height: `${dot.size}px`,
-              backgroundColor: dot.color,
-              opacity: dot.opacity * pulse,
-              boxShadow: `0 0 ${dot.size * 3}px ${dot.color}`,
+              backgroundColor: isDarkMode ? dot.color : '#86868b',
+              opacity: (isDarkMode ? dot.opacity : dot.opacity * 0.35) * pulse,
+              boxShadow: isDarkMode ? `0 0 ${dot.size * 3}px ${dot.color}` : 'none',
               willChange: 'transform, opacity',
             }}
           />
@@ -594,7 +615,7 @@ export function FloatingKeywords({ lang = 'en' }: FloatingKeywordsProps) {
 
       {/* ── Keyword badges ─────────────────────────────────────────── */}
       {sortedParticles.map((p) => {
-        const neon = NEON_COLORS[p.neon];
+        const neon = isDarkMode ? NEON_COLORS_DARK[p.neon] : NEON_COLORS_LIGHT[p.neon];
         const scale = DEPTH_SCALE[p.depth];
         const depthOpacity = DEPTH_OPACITY[p.depth];
         const fontSize = SIZE_PX[p.size] * scale;
@@ -606,8 +627,19 @@ export function FloatingKeywords({ lang = 'en' }: FloatingKeywordsProps) {
         const gradAngle = (frame * 0.8 + p.phaseOffset) % 360;
 
         // Slow breathing scale: oscillates ±8% over ~4-6 seconds per badge
-        const breathSpeed = 0.008 + (p.phaseOffset / 360) * 0.004; // slightly different per badge
+        const breathSpeed = 0.008 + (p.phaseOffset / 360) * 0.004;
         const breathScale = 1 + Math.sin(frame * breathSpeed + p.phaseOffset * 0.0175) * 0.08;
+
+        // Light mode: frosted glass; Dark mode: dark glass with neon glow
+        const badgeBg = isDarkMode
+          ? 'rgba(0,0,0,0.75)'
+          : 'rgba(255,255,255,0.82)';
+        const badgeShadow = isDarkMode
+          ? `0 0 8px ${neon.border}, inset 0 0 8px ${neon.border}`
+          : `0 1px 4px rgba(0,0,0,0.08), 0 0 0 1px ${neon.border}`;
+        const borderBg = isDarkMode
+          ? `conic-gradient(from ${gradAngle}deg, ${neon.color}, transparent 40%, ${neon.color}55 60%, transparent 80%, ${neon.color})`
+          : `conic-gradient(from ${gradAngle}deg, ${neon.color}88, transparent 40%, ${neon.color}44 60%, transparent 80%, ${neon.color}88)`;
 
         return (
           <div
@@ -617,8 +649,7 @@ export function FloatingKeywords({ lang = 'en' }: FloatingKeywordsProps) {
               transform: `translate3d(${p.x}px, ${p.y}px, 0) rotate(${p.rotation}deg) scale(${breathScale})`,
               willChange: 'transform',
               zIndex,
-              // Animated conic-gradient as the "border"
-              background: `conic-gradient(from ${gradAngle}deg, ${neon.color}, transparent 40%, ${neon.color}55 60%, transparent 80%, ${neon.color})`,
+              background: borderBg,
               padding: '1.5px',
               borderRadius: '9999px',
               opacity: depthOpacity,
@@ -634,8 +665,8 @@ export function FloatingKeywords({ lang = 'en' }: FloatingKeywordsProps) {
                 paddingBottom: `${padY}px`,
                 color: neon.color,
                 textShadow: neon.glow,
-                background: 'rgba(0,0,0,0.75)',
-                boxShadow: `0 0 8px ${neon.border}, inset 0 0 8px ${neon.border}`,
+                background: badgeBg,
+                boxShadow: badgeShadow,
               }}
             >
               {p.text}
