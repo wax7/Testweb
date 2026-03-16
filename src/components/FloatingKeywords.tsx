@@ -208,15 +208,24 @@ const DEPTH_OPACITY = [0.45, 0.75, 0.95]; // opacity per depth
 const DEPTH_SPEED = [0.4, 0.7, 1.0];      // velocity multiplier per depth
 
 // ── Initial positions (% of container) ──────────────────────────────
-// Evenly distributed across entire container for global spawn
-const INIT_POSITIONS: [number, number][] = [
-  [8, 5],   [30, 8],   [55, 3],   [78, 7],
-  [5, 25],  [25, 22],  [50, 20],  [75, 25],
-  [10, 42], [35, 40],  [60, 38],  [85, 43],
-  [5, 58],  [28, 60],  [52, 55],  [80, 60],
-  [12, 75], [38, 78],  [62, 73],  [88, 77],
-  [8, 90],  [45, 92],  [70, 88],  [92, 92],
+// Seeded pseudo-random distribution – each badge gets a unique zone
+// to prevent clustering, with jitter added at init time
+const INIT_ZONES: [number, number][] = [
+  [10, 8],   [32, 5],   [56, 10],  [80, 6],
+  [6, 28],   [28, 24],  [52, 22],  [76, 28],
+  [14, 44],  [38, 42],  [62, 40],  [86, 46],
+  [4, 60],   [26, 62],  [50, 58],  [78, 62],
+  [16, 76],  [40, 80],  [64, 74],  [88, 78],
+  [10, 92],  [46, 94],  [72, 90],  [94, 94],
 ];
+
+// Add randomized jitter (±8%) so badges never start on exact grid points
+function jitteredPosition(zoneX: number, zoneY: number): [number, number] {
+  const jitter = 8;
+  const x = Math.max(2, Math.min(96, zoneX + (Math.random() - 0.5) * jitter * 2));
+  const y = Math.max(2, Math.min(96, zoneY + (Math.random() - 0.5) * jitter * 2));
+  return [x, y];
+}
 
 // ── Micro-particle (tiny background dots) ───────────────────────────
 interface MicroDot {
@@ -321,10 +330,10 @@ export function FloatingKeywords({ lang = 'en' }: FloatingKeywordsProps) {
   const initParticles = useCallback((w: number, h: number) => {
     const pool = KEYWORDS_BY_LANG[lang] || KEYWORDS_BY_LANG.en;
     const shuffled = [...pool].sort(() => Math.random() - 0.5);
-    const count = Math.min(shuffled.length, INIT_POSITIONS.length);
+    const count = Math.min(shuffled.length, INIT_ZONES.length);
 
     return shuffled.slice(0, count).map((text, i): Particle => {
-      const [px, py] = INIT_POSITIONS[i];
+      const [px, py] = jitteredPosition(INIT_ZONES[i][0], INIT_ZONES[i][1]);
       const depth = DEPTH_SEQUENCE[i % DEPTH_SEQUENCE.length];
       const size = SIZE_SEQUENCE[i % SIZE_SEQUENCE.length];
       const neon = NEON_SEQUENCE[i % NEON_SEQUENCE.length];
@@ -360,158 +369,185 @@ export function FloatingKeywords({ lang = 'en' }: FloatingKeywordsProps) {
     const container = containerRef.current;
     if (!container) return;
 
-    const rect = container.getBoundingClientRect();
-    if (!initializedRef.current || particlesRef.current.length === 0) {
-      particlesRef.current = initParticles(rect.width, rect.height);
-      microDotsRef.current = initMicroDots(rect.width, rect.height);
-      initializedRef.current = true;
-    }
+    let cancelled = false;
 
-    const step = () => {
+    // Defer initialization until container has real dimensions
+    const initWhenReady = () => {
+      if (cancelled) return;
       const el = containerRef.current;
       if (!el) return;
       const cw = el.clientWidth;
       const ch = el.clientHeight;
-      const particles = particlesRef.current;
-      const n = particles.length;
-      const mouse = mouseRef.current;
-      const frame = frameRef.current++;
 
-      // ── Pairwise repulsion ──────────────────────────────────────────
-      for (let i = 0; i < n; i++) {
-        for (let j = i + 1; j < n; j++) {
-          const a = particles[i];
-          const b = particles[j];
-          const dx = b.x - a.x;
-          const dy = b.y - a.y;
-          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-          const minDist = (a.w + b.w) * 0.4 + 20;
-
-          if (dist < REPULSION_RADIUS) {
-            const force = REPULSION_STRENGTH * Math.max(0, 1 - dist / REPULSION_RADIUS);
-            const scaledForce = dist < minDist ? force * 2.5 : force;
-            const fx = (dx / dist) * scaledForce;
-            const fy = (dy / dist) * scaledForce;
-            a.vx -= fx;
-            a.vy -= fy;
-            b.vx += fx;
-            b.vy += fy;
-          }
-        }
+      // If container has no size yet, retry on next frame
+      if (cw < 10 || ch < 10) {
+        requestAnimationFrame(initWhenReady);
+        return;
       }
 
-      // ── Mouse repulsion ─────────────────────────────────────────────
-      if (mouse.active) {
+      if (!initializedRef.current || particlesRef.current.length === 0) {
+        particlesRef.current = initParticles(cw, ch);
+        microDotsRef.current = initMicroDots(cw, ch);
+        initializedRef.current = true;
+      }
+
+      // Start physics loop
+      startPhysics();
+    };
+
+    const startPhysics = () => {
+      const step = () => {
+        if (cancelled) return;
+        const el = containerRef.current;
+        if (!el) return;
+        const cw = el.clientWidth;
+        const ch = el.clientHeight;
+        const particles = particlesRef.current;
+        const n = particles.length;
+        const mouse = mouseRef.current;
+        const frame = frameRef.current++;
+
+        // ── Pairwise repulsion ──────────────────────────────────────────
+        for (let i = 0; i < n; i++) {
+          for (let j = i + 1; j < n; j++) {
+            const a = particles[i];
+            const b = particles[j];
+            const dx = b.x - a.x;
+            const dy = b.y - a.y;
+            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+            const minDist = (a.w + b.w) * 0.4 + 20;
+
+            if (dist < REPULSION_RADIUS) {
+              const force = REPULSION_STRENGTH * Math.max(0, 1 - dist / REPULSION_RADIUS);
+              const scaledForce = dist < minDist ? force * 2.5 : force;
+              const fx = (dx / dist) * scaledForce;
+              const fy = (dy / dist) * scaledForce;
+              a.vx -= fx;
+              a.vy -= fy;
+              b.vx += fx;
+              b.vy += fy;
+            }
+          }
+        }
+
+        // ── Mouse repulsion ─────────────────────────────────────────────
+        if (mouse.active) {
+          for (let i = 0; i < n; i++) {
+            const p = particles[i];
+            const pcx = p.x + p.w * 0.5;
+            const pcy = p.y + p.h * 0.5;
+            const dx = pcx - mouse.x;
+            const dy = pcy - mouse.y;
+            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+
+            if (dist < MOUSE_REPULSION_RADIUS) {
+              const force = MOUSE_REPULSION_STRENGTH * Math.pow(1 - dist / MOUSE_REPULSION_RADIUS, 1.5);
+              p.vx += (dx / dist) * force;
+              p.vy += (dy / dist) * force;
+              p.vr += (dx > 0 ? 0.05 : -0.05) * force * 0.1;
+            }
+          }
+        }
+
+        // ── Update each particle ────────────────────────────────────────
         for (let i = 0; i < n; i++) {
           const p = particles[i];
-          const pcx = p.x + p.w * 0.5;
-          const pcy = p.y + p.h * 0.5;
-          const dx = pcx - mouse.x;
-          const dy = pcy - mouse.y;
-          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+          const depthSpeed = DEPTH_SPEED[p.depth];
 
-          if (dist < MOUSE_REPULSION_RADIUS) {
-            const force = MOUSE_REPULSION_STRENGTH * Math.pow(1 - dist / MOUSE_REPULSION_RADIUS, 1.5);
-            p.vx += (dx / dist) * force;
-            p.vy += (dy / dist) * force;
-            p.vr += (dx > 0 ? 0.05 : -0.05) * force * 0.1;
+          // Soft edge repulsion
+          if (p.x < EDGE_ZONE) {
+            const depth = 1 - p.x / EDGE_ZONE;
+            p.vx += EDGE_FORCE * depth * depth;
           }
+          const rightDist = cw - (p.x + p.w);
+          if (rightDist < EDGE_ZONE) {
+            const depth = 1 - rightDist / EDGE_ZONE;
+            p.vx -= EDGE_FORCE * depth * depth;
+          }
+          if (p.y < EDGE_ZONE) {
+            const depth = 1 - p.y / EDGE_ZONE;
+            p.vy += EDGE_FORCE * depth * depth;
+          }
+          const bottomDist = ch - (p.y + p.h);
+          if (bottomDist < EDGE_ZONE) {
+            const depth = 1 - bottomDist / EDGE_ZONE;
+            p.vy -= EDGE_FORCE * depth * depth;
+          }
+
+          // Magnetic even-distribution (very subtle)
+          const cols = Math.round(Math.sqrt(n * (cw / ch)));
+          const rows = Math.ceil(n / cols);
+          const col = i % cols;
+          const row = Math.floor(i / cols);
+          const idealX = ((col + 0.5) / cols) * cw - p.w * 0.5;
+          const idealY = ((row + 0.5) / rows) * ch - p.h * 0.5;
+          p.vx += (idealX - p.x) * SPREAD_FORCE;
+          p.vy += (idealY - p.y) * SPREAD_FORCE;
+
+          // Apply velocity (depth-scaled)
+          p.x += p.vx * depthSpeed;
+          p.y += p.vy * depthSpeed;
+          p.rotation += p.vr;
+
+          // Friction
+          p.vx *= FRICTION;
+          p.vy *= FRICTION;
+          p.vr *= 0.98;
+
+          // Speed cap
+          const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+          if (speed > MAX_SPEED) {
+            const scale = MAX_SPEED / speed;
+            p.vx *= scale;
+            p.vy *= scale;
+          }
+
+          // Minimum drift
+          if (speed < BASE_SPEED * 0.3) {
+            const angle = Math.atan2(p.vy, p.vx) || (i * 0.7);
+            p.vx += Math.cos(angle) * 0.08;
+            p.vy += Math.sin(angle) * 0.08;
+          }
+
+          // Hard edge clamp (safety)
+          const margin = 2;
+          if (p.x < margin) { p.x = margin; p.vx = Math.abs(p.vx) * 0.4; }
+          else if (p.x + p.w > cw - margin) { p.x = cw - margin - p.w; p.vx = -Math.abs(p.vx) * 0.4; }
+          if (p.y < margin) { p.y = margin; p.vy = Math.abs(p.vy) * 0.4; }
+          else if (p.y + p.h > ch - margin) { p.y = ch - margin - p.h; p.vy = -Math.abs(p.vy) * 0.4; }
+
+          // Clamp rotation
+          if (p.rotation > 45) { p.rotation = 45; p.vr *= -0.5; }
+          if (p.rotation < -45) { p.rotation = -45; p.vr *= -0.5; }
         }
-      }
 
-      // ── Update each particle ────────────────────────────────────────
-      for (let i = 0; i < n; i++) {
-        const p = particles[i];
-        const depthSpeed = DEPTH_SPEED[p.depth];
-
-        // Soft edge repulsion
-        if (p.x < EDGE_ZONE) {
-          const depth = 1 - p.x / EDGE_ZONE;
-          p.vx += EDGE_FORCE * depth * depth;
-        }
-        const rightDist = cw - (p.x + p.w);
-        if (rightDist < EDGE_ZONE) {
-          const depth = 1 - rightDist / EDGE_ZONE;
-          p.vx -= EDGE_FORCE * depth * depth;
-        }
-        if (p.y < EDGE_ZONE) {
-          const depth = 1 - p.y / EDGE_ZONE;
-          p.vy += EDGE_FORCE * depth * depth;
-        }
-        const bottomDist = ch - (p.y + p.h);
-        if (bottomDist < EDGE_ZONE) {
-          const depth = 1 - bottomDist / EDGE_ZONE;
-          p.vy -= EDGE_FORCE * depth * depth;
+        // ── Update micro-dots ───────────────────────────────────────────
+        for (const dot of microDotsRef.current) {
+          dot.x += dot.vx;
+          dot.y += dot.vy;
+          // Wrap around edges
+          if (dot.x < 0) dot.x = cw;
+          if (dot.x > cw) dot.x = 0;
+          if (dot.y < 0) dot.y = ch;
+          if (dot.y > ch) dot.y = 0;
         }
 
-        // Magnetic even-distribution (very subtle)
-        const cols = Math.round(Math.sqrt(n * (cw / ch)));
-        const rows = Math.ceil(n / cols);
-        const col = i % cols;
-        const row = Math.floor(i / cols);
-        const idealX = ((col + 0.5) / cols) * cw - p.w * 0.5;
-        const idealY = ((row + 0.5) / rows) * ch - p.h * 0.5;
-        p.vx += (idealX - p.x) * SPREAD_FORCE;
-        p.vy += (idealY - p.y) * SPREAD_FORCE;
-
-        // Apply velocity (depth-scaled)
-        p.x += p.vx * depthSpeed;
-        p.y += p.vy * depthSpeed;
-        p.rotation += p.vr;
-
-        // Friction
-        p.vx *= FRICTION;
-        p.vy *= FRICTION;
-        p.vr *= 0.98;
-
-        // Speed cap
-        const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
-        if (speed > MAX_SPEED) {
-          const scale = MAX_SPEED / speed;
-          p.vx *= scale;
-          p.vy *= scale;
+        // Render every 2 frames
+        if (frame % 2 === 0) {
+          setRenderTick((t) => t + 1);
         }
 
-        // Minimum drift
-        if (speed < BASE_SPEED * 0.3) {
-          const angle = Math.atan2(p.vy, p.vx) || (i * 0.7);
-          p.vx += Math.cos(angle) * 0.08;
-          p.vy += Math.sin(angle) * 0.08;
-        }
-
-        // Hard edge clamp (safety)
-        const margin = 2;
-        if (p.x < margin) { p.x = margin; p.vx = Math.abs(p.vx) * 0.4; }
-        else if (p.x + p.w > cw - margin) { p.x = cw - margin - p.w; p.vx = -Math.abs(p.vx) * 0.4; }
-        if (p.y < margin) { p.y = margin; p.vy = Math.abs(p.vy) * 0.4; }
-        else if (p.y + p.h > ch - margin) { p.y = ch - margin - p.h; p.vy = -Math.abs(p.vy) * 0.4; }
-
-        // Clamp rotation
-        if (p.rotation > 45) { p.rotation = 45; p.vr *= -0.5; }
-        if (p.rotation < -45) { p.rotation = -45; p.vr *= -0.5; }
-      }
-
-      // ── Update micro-dots ───────────────────────────────────────────
-      for (const dot of microDotsRef.current) {
-        dot.x += dot.vx;
-        dot.y += dot.vy;
-        // Wrap around edges
-        if (dot.x < 0) dot.x = cw;
-        if (dot.x > cw) dot.x = 0;
-        if (dot.y < 0) dot.y = ch;
-        if (dot.y > ch) dot.y = 0;
-      }
-
-      // Render every 2 frames
-      if (frame % 2 === 0) {
-        setRenderTick((t) => t + 1);
-      }
+        animFrameRef.current = requestAnimationFrame(step);
+      };
 
       animFrameRef.current = requestAnimationFrame(step);
     };
 
-    animFrameRef.current = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(animFrameRef.current);
+    initWhenReady();
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(animFrameRef.current);
+    };
   }, [initParticles]);
 
   // Re-init on lang change
@@ -534,7 +570,7 @@ export function FloatingKeywords({ lang = 'en' }: FloatingKeywordsProps) {
       ref={containerRef}
       className="absolute inset-0 overflow-hidden pointer-events-none hidden md:block"
       aria-hidden="true"
-      style={{ zIndex: 0 }}
+      style={{ zIndex: 1 }}
     >
       {/* ── Micro-particles (tiny background dots) ──────────────────── */}
       {microDots.map((dot, i) => {

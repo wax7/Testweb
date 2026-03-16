@@ -275,7 +275,7 @@ export function ScreenshotShowcase({ title, subtitle, currentLang }: ScreenshotS
   const currentScreenshot = screenshots[currentIndex];
 
   return (
-    <section className="py-10 sm:py-14 px-4 sm:px-6 mac-bg overflow-hidden">
+    <section className="relative pt-4 sm:pt-6 pb-10 sm:pb-14 px-4 sm:px-6 overflow-hidden" style={{ zIndex: 2 }}>
       <div className="max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

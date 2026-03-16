@@ -83,18 +83,16 @@ export function HomeView() {
       </Header>
 
       <main id="main-content">
-        {/* Wrapper for FloatingKeywords – spans from Hero to just before MacBook section */}
-        <div className="relative">
+        {/* Wrapper for FloatingKeywords – spans Hero through ProblemSolution */}
+        <div className="relative overflow-hidden">
           <FloatingKeywords lang={currentLang} />
 
         {/* ══════════ HERO ══════════ */}
-        <section className="relative pt-24 sm:pt-28 md:pt-36 pb-16 sm:pb-24 md:pb-32 px-4 sm:px-6 min-h-[480px] md:min-h-[560px]">
+        <section className="relative pt-24 sm:pt-28 md:pt-36 pb-8 sm:pb-12 md:pb-16 px-4 sm:px-6 min-h-[480px] md:min-h-[560px] overflow-visible" style={{ zIndex: 5 }}>
           {/* Subtle radial accent behind heading */}
           <div className="absolute top-16 left-1/2 -translate-x-1/2 w-[700px] h-[400px] rounded-full bg-[#007AFF]/[0.04] dark:bg-[#0A84FF]/[0.06] blur-[100px] pointer-events-none" />
 
-          {/* Floating keyword tags - removed from here, now in wrapper above */}
-
-          <div className="relative max-w-5xl mx-auto text-center">
+          <div className="relative max-w-5xl mx-auto text-center" style={{ zIndex: 2 }}>
             {/* Brand name – large, clean */}
             <motion.div
               initial={{ opacity: 0, y: 24 }}
@@ -104,6 +102,9 @@ export function HomeView() {
               <h1 className="font-bold tracking-[-0.03em] text-[#1d1d1f] dark:text-[#f5f5f7] mb-3" style={{ fontSize: 'var(--text-hero)' }}>
                 MACA
               </h1>
+              <p className="tracking-wide mb-1" style={{ fontSize: 'var(--text-sm)', color: '#86868b', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+                Master Audio Control App
+              </p>
             </motion.div>
 
             {/* Subtitle */}
@@ -120,8 +121,8 @@ export function HomeView() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.15 }}
-              className="max-w-2xl mx-auto text-[#86868b] leading-relaxed"
-              style={{ fontSize: 'var(--text-lg)' }}
+              className="max-w-2xl mx-auto text-[#86868b] dark:text-[#86868b] leading-relaxed"
+              style={{ fontSize: 'var(--text-lg)', color: '#86868b' }}
               data-speakable
             >
               {t.hero.subtitle}
@@ -133,14 +134,15 @@ export function HomeView() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.25 }}
               className="mt-8 flex items-center justify-center gap-3"
+              style={{ overflow: 'visible' }}
             >
-              <div className="relative group">
+              <div className="relative group" style={{ overflow: 'visible', zIndex: 10 }}>
                 {/* Converging starfield effect behind button */}
-                <CtaStarfield width={380} height={130} isDark={isDarkMode} />
+                <CtaStarfield width={360} height={240} isDark={isDarkMode} />
                 {/* Static subtle glow */}
                 <div
-                  className="absolute -inset-x-8 -inset-y-4 rounded-full pointer-events-none blur-xl opacity-50 group-hover:opacity-70 transition-opacity duration-500"
-                  style={{ background: 'radial-gradient(ellipse at center, rgba(0,122,255,0.25) 0%, transparent 65%)' }}
+                  className="absolute -inset-6 rounded-full pointer-events-none blur-xl opacity-50 group-hover:opacity-70 transition-opacity duration-500"
+                  style={{ background: 'radial-gradient(circle at center, rgba(0,122,255,0.25) 0%, transparent 65%)' }}
                 />
                 <a
                   href={appStoreUrl}
@@ -165,7 +167,7 @@ export function HomeView() {
         />
 
         {/* Separator */}
-        <div className="mac-separator" />
+        <div className="mac-separator relative" style={{ zIndex: 2 }} />
 
         {/* ══════════ PROBLEM / SOLUTION ══════════ */}
         <ProblemSolutionSection
@@ -179,7 +181,7 @@ export function HomeView() {
           statAppsLabel={homeT.statAppsLabel}
         />
 
-        <div className="mac-separator" />
+        <div className="mac-separator relative" style={{ zIndex: 2 }} />
 
         </div>{/* End FloatingKeywords wrapper */}
 

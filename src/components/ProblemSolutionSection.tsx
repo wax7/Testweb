@@ -23,7 +23,7 @@ export function ProblemSolutionSection({
   statAppsLabel = 'No Limits',
 }: ProblemSolutionSectionProps) {
   return (
-    <section className="py-14 sm:py-20 px-4 sm:px-6 mac-bg">
+    <section className="relative py-14 sm:py-20 px-4 sm:px-6 mac-bg" style={{ zIndex: 2 }}>
       <div className="max-w-6xl mx-auto">
         <div className="grid md:grid-cols-2 gap-6 md:gap-10 items-start">
 

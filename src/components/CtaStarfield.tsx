@@ -43,7 +43,7 @@ function createStar(): Star {
   };
 }
 
-export function CtaStarfield({ width = 360, height = 120, isDark = false }: Props) {
+export function CtaStarfield({ width = 360, height = 240, isDark = false }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const starsRef = useRef<Star[]>([]);
   const ringsRef = useRef<number[]>([]);
@@ -69,9 +69,10 @@ export function CtaStarfield({ width = 360, height = 120, isDark = false }: Prop
 
     const cx = width / 2;
     const cy = height / 2;
-    // Radii for the elliptical field
-    const rx = width * 0.48;
-    const ry = height * 0.46;
+    // Use the shorter dimension as base radius, then stretch x slightly
+    const baseR = height * 0.46;
+    const rx = baseR * (width / height);
+    const ry = baseR;
 
     let running = true;
 
@@ -97,7 +98,7 @@ export function CtaStarfield({ width = 360, height = 120, isDark = false }: Prop
 
         if (opacity > 0.01) {
           ctx.beginPath();
-          ctx.ellipse(cx, cy, rx * scale * 0.45, ry * scale * 0.8, 0, 0, Math.PI * 2);
+          ctx.ellipse(cx, cy, rx * scale * 0.55, ry * scale * 0.55, 0, 0, Math.PI * 2);
           ctx.strokeStyle = `rgba(0, 122, 255, ${opacity})`;
           ctx.lineWidth = 1.2;
           ctx.stroke();
